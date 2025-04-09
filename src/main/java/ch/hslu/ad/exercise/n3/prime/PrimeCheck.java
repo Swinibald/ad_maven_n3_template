@@ -16,9 +16,17 @@
 package ch.hslu.ad.exercise.n3.prime;
 
 import java.math.BigInteger;
+import java.util.PrimitiveIterator;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+
 
 /**
  * 100 grosse Primzahlen finden.
@@ -39,13 +47,26 @@ public final class PrimeCheck {
      * @param args not used.
      */
     public static void main(String[] args) {
-        int n = 1;
-        while (n <= 100) {
-            BigInteger bi = new BigInteger(1024, new Random());
-            if (bi.isProbablePrime(Integer.MAX_VALUE)) {
-                LOG.info("{} : {}...", n, bi.toString().substring(0, 20));
-                n++;
-            }
-        }
+        int primeAmount = 0;
+        ExecutorService executor = Executors.newCachedThreadPool();
+        while (primeAmount < 100 ) {
+            Future<BigInteger> future = executor.submit(new PrimeTask());
+            
+            try {
+                BigInteger result = future.get();
+                if (result != null && result != BigInteger.ZERO) {
+                    primeAmount++;
+                    LOG.info("{} : {}...", primeAmount, result.toString().substring(0, 20));
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                LOG.error("Thread was interrupted", e);
+            } catch (ExecutionException e) {
+                LOG.error("Execution exception occurred", e);
+            }}
+        LOG.info("Done");
     }
+
 }
+  
+
