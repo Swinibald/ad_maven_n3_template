@@ -16,10 +16,7 @@
 package ch.hslu.ad.exercise.n3.prime;
 
 import java.math.BigInteger;
-import java.util.PrimitiveIterator;
-import java.util.Random;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
+import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -35,6 +32,7 @@ public final class PrimeCheck {
 
     private static final Logger LOG = LoggerFactory.getLogger(PrimeCheck.class);
 
+
     /**
      * Privater Konstruktor.
      */
@@ -47,26 +45,21 @@ public final class PrimeCheck {
      * @param args not used.
      */
     public static void main(String[] args) {
-        int primeAmount = 0;
-        ExecutorService executor = Executors.newCachedThreadPool();
-        while (primeAmount < 100 ) {
+        ExecutorService executor = Executors.newFixedThreadPool(20);
+        ArrayList<Future<BigInteger>> futures = new ArrayList<>();
+    
+        while (PrimeTask.getQueue().size() < 100) {
             Future<BigInteger> future = executor.submit(new PrimeTask());
-            
-            try {
-                BigInteger result = future.get();
-                if (result != null && result != BigInteger.ZERO) {
-                    primeAmount++;
-                    LOG.info("{} : {}...", primeAmount, result.toString().substring(0, 20));
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                LOG.error("Thread was interrupted", e);
-            } catch (ExecutionException e) {
-                LOG.error("Execution exception occurred", e);
-            }}
-        LOG.info("Done");
+            futures.add(future);
+        }
+    
+        executor.shutdownNow();  // Alle Threads abbrechen, sobald genug Primes
+    
+        int n = 1;
+        for (BigInteger prime : PrimeTask.getQueue()) {
+            LOG.info("{} : {}...", n, prime.toString().substring(0, 20));
+            n++;
+        }
     }
-
 }
-  
 
